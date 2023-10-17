@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sftpgo
+  namespace: sftp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sftpgo
+  template:
+    metadata:
+      labels:
+        app: sftpgo
+    spec:
+      securityContext:  # This is at Pod level
+        fsGroup: 1000
+        fsGroupChangePolicy: Always
+      containers:
+      - name: sftpgo
+        image: carne.azurecr.io/sftp/carne-sftpgo:latest #drakkan/sftpgo:latest
+        ports:
+        - containerPort: 2022  # SFTP port
+        - containerPort: 8080  # HTTP API and web admin interface port
+        securityContext:  # This is at Container level
+          runAsUser: 1000
+          runAsGroup: 1000
+        env:
+        - name: SFTPGO_DATA_PROVIDER__DRIVER
+          value: "postgresql"
+        - name: SFTPGO_DATA_PROVIDER__HOST
+          value: "stfpgo-postgres.postgres.database.azure.com"  # Replace with your PostgreSQL server name
+        - name: SFTPGO_DATA_PROVIDER__PORT
+          value: "5432"
+        - name: SFTPGO_DATA_PROVIDER__USERNAME
+          value: "sftppostgres@stfpgo-postgres"  # Replace with your PostgreSQL username and server name
+        - name: SFTPGO_DATA_PROVIDER__PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: SFTPGO_DATA_PROVIDER__NAME
+          value: "stfpgo-postgres"
+        - name: SFTPGO_DATA_PROVIDER__SSLMODE
+          value: "1"
+        - name: SFTPGO_DATA_PROVIDER__CLIENT_CERT
+          value: "/var/lib/sftpgo/BaltimoreCyberTrustRoot.crt.pem"
+        - name: SFTPGO_HTTPD__BIND_PORT
+          value: "8080"  # Port for HTTP API and web admin interface
+        - name: SFTPGO_HTTPD__BINDINGS_PORT
+          value: "8080"  # Port for HTTP API and web admin interface          
+        - name: SFTPGO_SFTPD__BINDINGS_PORT
+          value: "2022"
+        - name: SFTPGO_SFTPD__BIND_PORT
+          value: "2022"  # Port for SFTP service  
+        volumeMounts:
+        - name: sftpgo-storage
+          mountPath: /srv/sftpgo/data  # SFTPGo default data path
+      imagePullSecrets:
+      - name: acr-credentials  # reference to your ACR credentials secret
+      volumes:
+      - name: sftpgo-storage
+        persistentVolumeClaim:
+          claimName: sftpgo-pvc

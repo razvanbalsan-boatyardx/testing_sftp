@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sftpgo-ingress
+  namespace: sftp
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  rules:
+  - host: sftp.aks-in.nonprod.carnegroup.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sftpgo
+            port:
+              number: 8089
+  tls:  # remove this section if you don't want SSL
+  - hosts:
+    - sftp.aks-in.nonprod.carnegroup.com
+    secretName: sftpgo-tls  # SSL certificate secret

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: mc_cdseundrg01-research_cds-eun-dev-res-aks_northeurope
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: 20.191.43.252
+    service.beta.kubernetes.io/azure-pip-name: kubernetes-a19bc9d0f907e4db2b9a342b5fbcd7ef
+  name: azure-load-balancer
+  namespace: sftp
+spec:
+  type: LoadBalancer
+  ports:
+  - name: sftp
+    protocol: TCP
+    port: 2022
+    targetPort: 2022
+  selector:
+    app: sftpgo
